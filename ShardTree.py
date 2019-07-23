@@ -1,0 +1,276 @@
+import random
+import graphviz
+import matplotlib
+import numpy as np
+
+from Shard import Shard
+from Account import Account
+
+class ShardTree:
+    def __init__(self):
+        self.root = None
+        self.shards = []
+        self.shards_depth_map = {}
+        self.norm = None
+        self.cmap = None
+
+    # def inorder_traversal_util(self, root):
+    #     if root is not None:
+    #         print(root.id)
+    #         for child in root.children:
+    #             inorder_traversal(child)
+    #
+    # def inorder_traversal(self):
+    #     self.inorder_traversal_util(self.root)
+
+    # ---------------------------------------------------------
+    # ------------- BUILD SHARD TREE FUNCTIONS ----------------
+    # ---------------------------------------------------------
+
+    def assign_shard_depths_util(self, root):
+        if root is not None:
+            if root.parent is None:
+                root.depth = 0
+            else:
+                root.depth = root.parent.depth + 1
+            for child in root.children:
+                self.assign_shard_depths_util(child)
+
+    def assign_shard_depths(self):
+        self.assign_shard_depths_util(self.root)
+
+    def get_all_shards_util(self, root):
+        if root is None:
+            return []
+        shards = [root]
+        for child in root.children:
+            shards.extend(self.get_all_shards_util(child))
+        return shards
+
+    def get_all_shards(self):
+        return self.get_all_shards_util(self.root)
+
+    def build_shard_depth_map_util(self, shards):
+        shards_depth_map = {}
+        for shard in shards:
+            if shard.depth not in shards_depth_map:
+                shards_depth_map[shard.depth] = [shard]
+            else:
+                shards_depth_map[shard.depth].append(shard)
+        return shards_depth_map
+
+    def build_shard_depth_map(self):
+        # Assumes updated self.shards
+        return self.build_shard_depth_map_util(self.shards)
+
+    def build_complete_binary_tree_util(self, root, depth):
+        if(root.depth==depth):
+            return
+        root.children = [Shard(2*root.id+1, load=[], target=None, parent=root, depth=root.depth+1, children=[]), \
+                         Shard(2*root.id+2, load=[], target=None, parent=root, depth=root.depth+1, children=[])]
+        self.build_complete_binary_tree_util(root.children[0], depth)
+        self.build_complete_binary_tree_util(root.children[1], depth)
+
+    def build_complete_binary_tree(self, depth):
+        # Build a complete binary shard tree of specified depth
+        # Also sets self.shards and self.shards_depth_map fields
+        self.root = Shard(0, load=[], target=None, parent=None, depth=0, children=[])
+        self.build_complete_binary_tree_util(self.root, depth)
+        self.shards = self.get_all_shards()
+        self.shards_depth_map = self.build_shard_depth_map()
+
+    # --------------------------------------------------
+    # ------------- BALANCING FUNCTIONS ----------------
+    # --------------------------------------------------
+
+    def choose_shard_to_balance(self):
+        # Chooses a shard to balance
+        pass
+
+    def balance_shards(self):
+        # Chooses a shard to balance and balances it using specified balancing algorithm
+        pass
+
+    # -------------------------------------------------
+    # ------------- GRAPHVIZ FUNCTIONS ----------------
+    # -------------------------------------------------
+
+    def get_shard_label(self, shard):
+        # Get graph label for rendering image
+        pass
+
+    def build_graph(self):
+        # Returns a graph object corresponding to this shard tree
+        pass
+
+    def setup_colormap(self):
+        # Sets self.colormap for coloring shards according to shard load
+        pass
+
+# -----------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
+
+class SingleContinuousLoadShardTree(ShardTree):
+    # ShardTree that contains Shards with a single, continuous load parameter
+
+    '''
+    Example instantiation:
+    shard_tree = SingleContinuousLoadShardTree()
+    shard_tree.build_complete_binary_tree(2)
+    shard_tree.setup_colormap()
+    '''
+
+    # ---------------------------------------------------------
+    # ------------- BUILD SHARD TREE FUNCTIONS ----------------
+    # ---------------------------------------------------------
+
+    def build_complete_binary_tree(self, depth):
+        super().build_complete_binary_tree(depth)
+        for shard in self.shards:
+            shard.load = random.randint(8,17)
+        self.assign_target_loads()
+
+    # --------------------------------------------------
+    # ------------- BALANCING FUNCTIONS ----------------
+    # --------------------------------------------------
+
+    def choose_shard_heavier_than_target(self):
+        lucky_shard = random.choice(self.shards)
+        while lucky_shard.load <= lucky_shard.target:
+            lucky_shard = random.choice(self.shards)
+        return lucky_shard
+
+    def choose_shard_to_balance(self):
+        return self.choose_shard_heavier_than_target()
+
+    def assign_target_loads(self):
+        shard_loads = [shard.load for shard in self.shards]
+        target_load = sum(shard_loads)/len(shard_loads)
+        min_load = min(shard_loads)
+        max_load = max(shard_loads)
+        for shard in self.shards:
+            shard.target = target_load
+
+    def balance_with_lightest_neighbor(self, lucky_shard):
+        lucky_shard_neighbors = [lucky_shard.parent] if lucky_shard.parent is not None else []
+        for child in lucky_shard.children:
+            lucky_shard_neighbors.append(child)
+
+        min_load_neighbor = lucky_shard_neighbors[0]
+        for shard in lucky_shard_neighbors[1:]:
+            if shard.load < min_load_neighbor.load:
+                min_load_neighbor = shard
+
+        print("min_load_neighbor:", min_load_neighbor.id)
+
+        min_load_neighbor.load += lucky_shard.load-lucky_shard.target
+        lucky_shard.load = lucky_shard.target
+
+    def balance_shards(self):
+        lucky_shard = self.choose_shard_to_balance()
+        print("lucky_shard:", lucky_shard.id)
+        self.balance_with_lightest_neighbor(lucky_shard)
+
+    # -------------------------------------------------
+    # ------------- GRAPHVIZ FUNCTIONS ----------------
+    # -------------------------------------------------
+
+    def get_shard_label(self, shard):
+        return '%05.2f'%shard.load + ' (' + '%02d'%shard.id + ')'
+
+    def build_graph(self):
+        shards_depth_map = self.shards_depth_map
+        d = graphviz.Digraph(format='png')
+        d.node_attr.update(style='filled')
+        for depth in shards_depth_map.keys():
+            s = graphviz.Digraph('subgraph'+str(depth))
+            s.graph_attr.update(rank='same')
+            for shard in shards_depth_map[depth]:
+                s.node(self.get_shard_label(shard), color='#%02x%02x%02x' % tuple([int(x*255) for x in self.cmap(self.norm(shard.load))[0:3]]))
+                for child in shard.children:
+                    d.edge(self.get_shard_label(shard), self.get_shard_label(child))
+            d.subgraph(s)
+        d.node_attr.update(fontname='Courier Bold')
+        return d
+
+    def setup_colormap(self):
+        shard_loads = [shard.load for shard in self.shards]
+        target_load = sum(shard_loads)/len(shard_loads)
+        min_load = min(shard_loads)
+        max_load = max(shard_loads)
+        max_deviation = max(abs(target_load-min_load), abs(max_load-target_load))
+        self.norm = matplotlib.colors.Normalize(vmin=target_load-max_deviation, vmax=target_load+max_deviation)
+        self.cmap = matplotlib.cm.get_cmap('coolwarm')
+
+# -----------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
+
+class AccountBasedShardTree(ShardTree):
+    # ShardTree that contains Shards with Account objects (which have avg. gas consumption, storage size, and communicate with other accounts)
+
+    def __init__(self):
+        self.accounts = []
+        super().__init__()
+
+    # ---------------------------------------------------------
+    # ------------- BUILD SHARD TREE FUNCTIONS ----------------
+    # ---------------------------------------------------------
+
+    def build_complete_binary_tree(self, depth):
+        # Build the complete binary tree structure
+        super().build_complete_binary_tree(depth)
+
+        # Construct Account objects
+        accounts_per_shard = 3
+        num_shards = (2**(depth+1)-1)
+        num_accounts = accounts_per_shard*num_shards
+        linked_accounts_per_account = 2
+        self.accounts = [ Account(id=x, gas_size=random.randint(1, 10), storage_size=random.randint(1, 100), linked_accounts=[]) for x in range(num_accounts) ]
+        for account in self.accounts:
+            possible_linked_accounts = self.accounts.copy()
+            possible_linked_accounts.remove(account)
+            account.linked_accounts = list(np.random.choice(possible_linked_accounts, size=linked_accounts_per_account, replace=False))
+
+        # Assign accounts to shards
+        accounts_list = self.accounts.copy()
+        np.random.shuffle(accounts_list)
+        for shard in self.shards:
+            shard.load = accounts_list[:accounts_per_shard]
+            accounts_list = accounts_list[accounts_per_shard:]
+
+    # -------------------------------------------------
+    # ------------- GRAPHVIZ FUNCTIONS ----------------
+    # -------------------------------------------------
+
+    def get_shard_label(self, shard):
+        shard_label = ", ".join(map(str, [(account.id, account.gas_size) for account in shard.load]))
+        return shard_label + '\n (' + str(shard.id) + ')'
+        # return '%05.2f'%shard.load + ' (' + str(shard.id) + ')'
+
+    def build_graph(self):
+        shards_depth_map = self.shards_depth_map
+        d = graphviz.Digraph(format='png')
+        d.node_attr.update(style='filled')
+        for depth in shards_depth_map.keys():
+            s = graphviz.Digraph('subgraph'+str(depth))
+            s.graph_attr.update(rank='same')
+            for shard in shards_depth_map[depth]:
+                s.node(self.get_shard_label(shard))
+                # s.node(shard.get_shard_label(), color='#%02x%02x%02x' % tuple([int(x*255) for x in self.cmap(self.norm(shard.load))[0:3]]))
+                for child in shard.children:
+                    d.edge(self.get_shard_label(shard), self.get_shard_label(child))
+            d.subgraph(s)
+        d.node_attr.update(fontname='Courier Bold')
+        return d
+
+    def setup_colormap(self):
+        # shard_loads = [shard.load for shard in self.shards]
+        # target_load = sum(shard_loads)/len(shard_loads)
+        # min_load = min(shard_loads)
+        # max_load = max(shard_loads)
+        # max_deviation = max(abs(target_load-min_load), abs(max_load-target_load))
+        # self.norm = matplotlib.colors.Normalize(vmin=target_load-max_deviation, vmax=target_load+max_deviation)
+        # self.cmap = matplotlib.cm.get_cmap('coolwarm')
+        pass
