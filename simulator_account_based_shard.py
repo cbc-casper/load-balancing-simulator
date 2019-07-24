@@ -29,21 +29,23 @@ IMG_SEQ = 0
 EXP_VARIANCE = []
 shard_tree = AccountBasedShardTree()
 shard_tree.build_complete_binary_tree(2)
+shard_tree.setup_node_colormap()
+shard_tree.setup_edge_colormap()
 
-for account in shard_tree.accounts:
-    print("Account:", account.id)
-    print("Linked Accounts:", [a.id for a in account.linked_accounts])
-    print("-------------------")
+# for account in shard_tree.accounts:
+#     print("Account:", account.id)
+#     print("Linked Accounts:", [a.id for a in account.linked_accounts])
+#     print("-------------------")
+# print("********************************************")
+# print("********************************************")
+# print("********************************************")
+# for shard in shard_tree.shards:
+#     print("Shard:", shard.id)
+#     print("Accounts:", [account.id for account in shard.load])
+#     print("-------------------")
 
-print("********************************************")
-print("********************************************")
-print("********************************************")
-
-
-for shard in shard_tree.shards:
-    print("Shard:", shard.id)
-    print("Accounts:", [account.id for account in shard.load])
-    print("-------------------")
+for edge in shard_tree.edges:
+    print((edge[0].id, edge[1].id), "\t", shard_tree.edge_weights_map[edge] )
 
 shard_tree.build_graph().view()
 
