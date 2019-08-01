@@ -1,4 +1,4 @@
-# <center>Load Balancing in CBC Casper Sharding</center>
+# Load Balancing in CBC Casper Sharding
 
 ## Introduction
 
@@ -8,7 +8,7 @@
   + They also need to execute the state transitions proposed by blockchain transactions, and the cost of computing these (per unit time) is called "**gas consumption**". We will concern ourselves with the average gas consumption for the purpose of load balancing.
 - Currently in Ethereum, gas consumption is limited by specified "**gas limits**" per block. There are no limits for the storage size.
 
-<center>![Eth1.0-Load-Figure](./Images/eth1-load-figure.png)</center>
+![Eth1.0-Load-Figure](./Images/eth1-load-figure.png)
 
 
 ### Sharding
@@ -27,7 +27,7 @@
 - Shards can only directly communicate with their immediate neighbors (parent and children). Communication between different shards is called "cross-shard communication".
 - The basic unit of load in the shards is the "**account**". Each shards contain several accounts, and accounts can be moved across shards.
 
-<center>![CBC-Hierarchical-Sharding](./Images/cbc-hierarchical-sharding.png)</center>
+![CBC-Hierarchical-Sharding](./Images/cbc-hierarchical-sharding.png)
 
 ### Accounts
 - Accounts have an average gas consumption, storage size, and may communicate with other accounts (called "**linked accounts**").
@@ -43,7 +43,7 @@
 - If an account on one shard communicates with an account on another shard, then it generates cross-shard transactions.
 - Cross-shard transactions are routed from the source shard to the destination shard. These transactions appear in all the shards in the path of the route, and consume gas in intermediate shards for computing the routing operations.
 
-<center>![X-Shard-TX-Example](./Images/x-shard-example.png)</center>
+![X-Shard-TX-Example](./Images/x-shard-example.png)
 
 
 ### Shard Load
@@ -53,17 +53,17 @@
     - Routing of cross-shard transactions where this shard is in the path
   + **Storage load** originating from the storage size of all accounts in the shard
 
-<center>![CBC-Sharding-Load-Figure](./Images/cbc-sharding-load-figure.png)</center>
+![CBC-Sharding-Load-Figure](./Images/cbc-sharding-load-figure.png)
 
 ## Load Balancing
 - To ensure fair usage costs for users and fair operating costs for validators and nodes across all shards, the respective costs must be regulated.
 - If the load at one shard becomes too high (compared to the others), then users/nodes of that shard experience higher costs for usage/operation.
 - The goal is to ensure low variance in gas load and storage load across all shards.
 - Example: The figure below depicts a snapshot of the shards.
-  <center>![Colormap-Label](./Images/colormap.png)</center>
+  ![Colormap-Label](./Images/colormap.png)
 
 
-  <center>![Shard-Load-Color-Example](./Images/shard-load-color-example.png)</center>  
+  ![Shard-Load-Color-Example](./Images/shard-load-color-example.png)  
 
   +  The node labels show the respective gas load from accounts in the shard, and the shard ID (in parenthesis).
   + The edge labels show the gas load caused by X-shard transactions.
