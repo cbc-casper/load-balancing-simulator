@@ -277,17 +277,17 @@ class AccountBasedShardTree(ShardTree):
         super().build_complete_binary_tree(depth)
 
         # Construct Account objects
-        accounts_per_shard = 3
+        accounts_per_shard = 10
         num_shards = (2**(depth+1)-1)
         num_accounts = accounts_per_shard*num_shards
         linked_accounts_per_account = 2
-        self.accounts = [ Account(id=x, gas_size=random.randint(1, 10), storage_size=random.randint(1, 100)) for x in range(num_accounts) ]
+        self.accounts = [ Account(id=x, gas_size=random.randint(1, 20), storage_size=random.randint(1, 100)) for x in range(num_accounts) ]
         for account in self.accounts:
             possible_linked_accounts = self.accounts.copy()
             possible_linked_accounts.remove(account)
             account.linked_accounts = list(np.random.choice(possible_linked_accounts, size=linked_accounts_per_account, replace=False))
             for linked_account in account.linked_accounts:
-                account.linked_accounts_tx_count[linked_account] = random.randint(1, 20)
+                account.linked_accounts_tx_count[linked_account] = random.randint(1, 3)
 
         # Assign accounts to shards
         accounts_list = self.accounts.copy()
